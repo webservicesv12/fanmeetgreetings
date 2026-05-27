@@ -30,7 +30,7 @@ function isRateLimited(ip: string, limit: number, windowMs: number): boolean {
 
 export default auth(function middleware(req: NextRequest & { auth: any }) {
   const { pathname } = req.nextUrl;
-  const ip = req.headers.get("x-forwarded-for") ?? req.ip ?? "unknown";
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
 
   // Rate limit auth endpoints: 20 req/min
   if (pathname.startsWith("/api/auth")) {
