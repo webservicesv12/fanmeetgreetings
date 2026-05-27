@@ -13,7 +13,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { action, reason, adminNotes } = await req.json();
   const booking = await prisma.booking.findUnique({
     where: { id },
-    include: { celebrity: true },
+    include: { celebrity: true, payment: true },
   });
   if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
 
