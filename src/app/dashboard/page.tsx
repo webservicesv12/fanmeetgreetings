@@ -84,15 +84,15 @@ export default function DashboardPage() {
         ) : (
           <div className="space-y-3">
             {bookings.slice(0, 5).map((booking) => {
-              const StatusIcon = STATUS_ICONS[booking.status] || Clock;
-              const statusClass = {
+              const StatusIcon = (STATUS_ICONS as Record<string, any>)[booking.status as string] || Clock;
+              const statusClass = ({
                 APPROVED: "text-green-400",
                 REJECTED: "text-red-400",
                 COMPLETED: "text-purple-400",
                 PENDING: "text-amber-400",
                 PAYMENT_SUBMITTED: "text-blue-400",
                 CANCELLED: "text-gray-400",
-              }[booking.status] || "text-[#6B7280]";
+              } as Record<string, string>)[booking.status as string] || "text-[#6B7280]";
               return (
                 <Link key={booking.id} href={`/dashboard/bookings/${booking.id}`}
                   className="flex items-center justify-between p-3 md:p-4 glass rounded-xl hover:border-[#D4AF37]/20 transition-all group gap-2">
