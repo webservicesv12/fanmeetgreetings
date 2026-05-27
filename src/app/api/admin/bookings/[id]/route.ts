@@ -3,7 +3,8 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { sendBookingApprovedEmail, sendBookingRejectedEmail } from "@/lib/resend";
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const session = await auth();
   if (!session?.user || (session.user as any).role !== "ADMIN") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -11,7 +12,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   const { action, reason, adminNotes } = await req.json();
   const booking = await prisma.booking.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: { celebrity: true },
   });
   if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
@@ -23,7 +24,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (action === "cancel") newStatus = "CANCELLED";
 
   const updated = await prisma.booking.update({
-    where: { id: params.id },
+    where: { id },
     data: { status: newStatus as any, adminNotes: adminNotes || booking.adminNotes },
   });
 
@@ -79,13 +80,14 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   return NextResponse.json({ booking: updated });
 }
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const session = await auth();
   if (!session?.user || (session.user as any).role !== "ADMIN") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const booking = await prisma.booking.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       celebrity: true,
       user: true,
