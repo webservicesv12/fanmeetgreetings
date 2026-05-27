@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
+import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -107,7 +108,8 @@ function StepIndicator({ currentStep, total }: { currentStep: number; total: num
 
 // ─── Main Booking Page ────────────────────────────────────────────────────────
 
-export default function BookingPage({ params }: { params: { celebrityId: string } }) {
+export default function BookingPage({ params }: { params: Promise<{ celebrityId: string }> }) {
+  const resolvedParams = React.use(params);
   const { data: session } = useSession();
   const router = useRouter();
   const [step, setStep] = useState(1);
@@ -168,7 +170,7 @@ export default function BookingPage({ params }: { params: { celebrityId: string 
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          celebrityId: params.celebrityId,
+          celebrityId: resolvedParams.celebrityId,
           eventType,
           eventDate: `${eventDate}T${eventTime}:00`,
           duration,
