@@ -151,19 +151,30 @@ function CelebritiesContent() {
   const [maxPrice, setMaxPrice] = useState("");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [celebrities, setCelebrities] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = PLACEHOLDER_CELEBRITIES.filter((c) => {
-    if (search && !c.name.toLowerCase().includes(search.toLowerCase())) return false;
-    if (category && c.category !== category) return false;
+  useEffect(() => {
+    setLoading(true);
+    const params = new URLSearchParams();
+    if (search) params.set("q", search);
+    if (category) params.set("category", category);
+    fetch(`/api/celebrities?${params.toString()}`)
+      .then((r) => r.json())
+      .then((d) => { setCelebrities(d.celebrities?.length ? d.celebrities : PLACEHOLDER_CELEBRITIES); setLoading(false); })
+      .catch(() => { setCelebrities(PLACEHOLDER_CELEBRITIES); setLoading(false); });
+  }, [search, category]);
+
+  const filtered = celebrities.filter((c) => {
     if (verifiedOnly && !c.verified) return false;
     if (minPrice && c.basePrice < Number(minPrice)) return false;
     if (maxPrice && c.basePrice > Number(maxPrice)) return false;
     return true;
-  }).sort((a, b) => {
+  }).sort((a: any, b: any) => {
     if (sort === "price_low") return a.basePrice - b.basePrice;
     if (sort === "price_high") return b.basePrice - a.basePrice;
     if (sort === "rating") return b.rating - a.rating;
-    return b.reviewCount - a.reviewCount;
+    return (b.reviewCount || 0) - (a.reviewCount || 0);
   });
 
   return (
@@ -314,7 +325,20 @@ function CelebritiesContent() {
         </div>
 
         {/* Celebrity Grid */}
-        {filtered.length > 0 ? (
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[1,2,3,4,5,6,7,8].map((i) => (
+              <div key={i} className="card-luxury overflow-hidden">
+                <div className="skeleton h-52" />
+                <div className="p-5 space-y-3">
+                  <div className="skeleton h-4 rounded w-3/4" />
+                  <div className="skeleton h-3 rounded w-1/2" />
+                  <div className="skeleton h-8 rounded-lg w-full mt-4" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filtered.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filtered.map((celeb) => (
               <CelebrityCard key={celeb.id} celeb={celeb} />

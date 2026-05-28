@@ -8,6 +8,19 @@ import { motion } from "framer-motion";
 import { Star, Eye, EyeOff, Mail, Lock, ArrowRight } from "lucide-react";
 import toast from "react-hot-toast";
 
+// Auth.js v5 returns error codes, not raw messages — map them to readable text
+const AUTH_ERRORS: Record<string, string> = {
+  CredentialsSignin: "Invalid email or password. Please try again.",
+  CallbackRouteError: "Invalid email or password. Please try again.",
+  Configuration: "Server configuration error. Please contact support.",
+  AccessDenied: "Access denied. Your account may be suspended.",
+  Verification: "The verification link is invalid or has expired.",
+  OAuthSignin: "Could not sign in with Google. Please try again.",
+  OAuthCallback: "Google sign-in was cancelled or failed.",
+  OAuthCreateAccount: "Could not create account with Google.",
+  Default: "Something went wrong. Please try again.",
+};
+
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -27,7 +40,8 @@ export default function LoginPage() {
         redirect: false,
       });
       if (result?.error) {
-        toast.error(result.error);
+        const message = AUTH_ERRORS[result.error] ?? AUTH_ERRORS["Default"];
+        toast.error(message);
       } else {
         toast.success("Welcome back!");
         router.push(callbackUrl);

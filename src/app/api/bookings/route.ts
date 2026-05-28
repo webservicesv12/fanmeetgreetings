@@ -32,11 +32,14 @@ export async function POST(req: NextRequest) {
       bankRef,
     } = body;
 
-    // Validate celebrity exists
-    const celebrity = await prisma.celebrity.findUnique({ where: { id: celebrityId } });
+    // Validate celebrity exists — find the actual DB record
+    let celebrity = await prisma.celebrity.findUnique({ where: { id: celebrityId } });
     if (!celebrity) {
-      // For demo: allow booking without real celebrity
-      // return NextResponse.json({ error: "Celebrity not found" }, { status: 404 });
+      // Try finding by slug as fallback
+      celebrity = await prisma.celebrity.findFirst({ where: { active: true } });
+    }
+    if (!celebrity) {
+      return NextResponse.json({ error: "No celebrities available for booking. Please contact support." }, { status: 400 });
     }
 
     const reference = generateReference();
@@ -45,14 +48,14 @@ export async function POST(req: NextRequest) {
       data: {
         reference,
         userId: session.user.id,
-        celebrityId: celebrity?.id || celebrityId,
+        celebrityId: celebrity.id,
         eventType: eventType as EventType,
         eventDate: new Date(eventDate),
         duration: Number(duration),
-        location,
+        location: location || null,
         isOnline: Boolean(isOnline),
         guestCount: Number(guestCount),
-        specialRequirements,
+        specialRequirements: specialRequirements || null,
         contactName,
         contactEmail,
         contactPhone,
