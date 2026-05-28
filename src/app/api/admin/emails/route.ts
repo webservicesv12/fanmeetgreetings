@@ -4,6 +4,10 @@ import prisma from "@/lib/prisma";
 import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "MeetGreetings";
+const FROM = process.env.RESEND_FROM_EMAIL
+  ? `${APP_NAME} <${process.env.RESEND_FROM_EMAIL}>`
+  : `${APP_NAME} <noreply@meetgreetings.com>`;
 
 export async function POST(req: NextRequest) {
   try {
@@ -40,7 +44,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Recipient email is required" }, { status: 400 });
       }
       await resend.emails.send({
-        from: "MeetGreetings <no-reply@meetgreetings.com>",
+        from: FROM,
         to: [singleEmail.trim()],
         subject,
         html: htmlBody,
@@ -68,7 +72,7 @@ export async function POST(req: NextRequest) {
     for (let i = 0; i < emails.length; i += BATCH_SIZE) {
       const batch = emails.slice(i, i + BATCH_SIZE);
       await resend.emails.send({
-        from: "MeetGreetings <no-reply@meetgreetings.com>",
+        from: FROM,
         to: batch,
         subject,
         html: htmlBody,
