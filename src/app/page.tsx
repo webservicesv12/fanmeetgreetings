@@ -417,9 +417,12 @@ export default function HomePage() {
                         From ${[5000, 12000, 2500, 8000][i].toLocaleString()}
                       </span>
                     </div>
-                    <button className="w-full btn-glass py-3 rounded-xl text-sm font-semibold group-hover:border-[#D4AF37]/40 group-hover:text-[#D4AF37] transition-all">
+                    <Link
+                      href={`/celebrities/${["aria-starlight","james-thunder","elena-voss","marcus-king"][i]}`}
+                      className="w-full btn-glass py-3 rounded-xl text-sm font-semibold text-center block group-hover:border-[#D4AF37]/40 group-hover:text-[#D4AF37] transition-all"
+                    >
                       Book Now
-                    </button>
+                    </Link>
                   </div>
                 </Link>
               </motion.div>

@@ -18,12 +18,16 @@ import {
   ChevronRight,
   Menu,
   X,
+  Sparkles,
+  Ticket,
 } from "lucide-react";
 
 const ADMIN_LINKS = [
   { href: "/admin",              label: "Dashboard",   icon: LayoutDashboard },
   { href: "/admin/bookings",     label: "Bookings",    icon: Calendar },
+  { href: "/admin/events",       label: "Events",      icon: Ticket },
   { href: "/admin/celebrities",  label: "Celebrities", icon: Star },
+  { href: "/admin/experiences",  label: "Experiences", icon: Sparkles },
   { href: "/admin/users",        label: "Users",       icon: Users },
   { href: "/admin/payments",     label: "Payments",    icon: CreditCard },
   { href: "/admin/emails",       label: "Emails",      icon: Mail },
