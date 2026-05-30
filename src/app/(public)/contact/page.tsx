@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Mail, Phone, MapPin, Clock, Send, Loader2, CheckCircle, MessageSquare, Instagram, Twitter, Youtube } from "lucide-react";
+import { Mail, Phone, MapPin, Clock, Send, Loader2, CheckCircle, MessageSquare } from "lucide-react";
 import toast from "react-hot-toast";
 import Link from "next/link";
 
