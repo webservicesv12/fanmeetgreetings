@@ -53,17 +53,7 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
-// Placeholder celebrity data until DB is seeded
-const PLACEHOLDER_CELEBRITIES = [
-  { id: "1", name: "Aria Starlight", slug: "aria-starlight", category: "MUSIC", basePrice: 5000, rating: 4.9, reviewCount: 127, verified: true, featured: true, image: null, bio: "Grammy-winning artist with chart-topping hits worldwide." },
-  { id: "2", name: "James Thunder", slug: "james-thunder", category: "ACTOR", basePrice: 12000, rating: 4.8, reviewCount: 89, verified: true, featured: false, image: null, bio: "Hollywood A-lister known for blockbuster action films." },
-  { id: "3", name: "Elena Voss", slug: "elena-voss", category: "INFLUENCER", basePrice: 2500, rating: 4.7, reviewCount: 203, verified: true, featured: false, image: null, bio: "Social media powerhouse with 50M+ followers across platforms." },
-  { id: "4", name: "Marcus King", slug: "marcus-king", category: "ATHLETE", basePrice: 8000, rating: 4.9, reviewCount: 156, verified: true, featured: true, image: null, bio: "World champion athlete and Olympic gold medalist." },
-  { id: "5", name: "Sofia Rivera", slug: "sofia-rivera", category: "COMEDIAN", basePrice: 3500, rating: 4.8, reviewCount: 94, verified: true, featured: false, image: null, bio: "Stand-up comedian and TV host with sold-out world tours." },
-  { id: "6", name: "DJ Nexus", slug: "dj-nexus", category: "DJ", basePrice: 6000, rating: 4.6, reviewCount: 78, verified: true, featured: false, image: null, bio: "International DJ with residencies at top global venues." },
-  { id: "7", name: "Ryan Chase", slug: "ryan-chase", category: "ACTOR", basePrice: 9500, rating: 4.7, reviewCount: 112, verified: false, featured: false, image: null, bio: "Rising star known for critically acclaimed indie films." },
-  { id: "8", name: "Zara Moon", slug: "zara-moon", category: "MUSIC", basePrice: 7500, rating: 4.9, reviewCount: 189, verified: true, featured: true, image: null, bio: "Pop sensation with 10 consecutive #1 Billboard hits." },
-];
+
 
 const CATEGORY_COLORS: Record<string, string> = {
   MUSIC: "text-purple-400",
@@ -76,7 +66,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   ENTREPRENEUR: "text-red-400",
 };
 
-function CelebrityCard({ celeb }: { celeb: (typeof PLACEHOLDER_CELEBRITIES)[0] }) {
+function CelebrityCard({ celeb }: { celeb: any }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -161,8 +151,8 @@ function CelebritiesContent() {
     if (category) params.set("category", category);
     fetch(`/api/celebrities?${params.toString()}`)
       .then((r) => r.json())
-      .then((d) => { setCelebrities(d.celebrities?.length ? d.celebrities : PLACEHOLDER_CELEBRITIES); setLoading(false); })
-      .catch(() => { setCelebrities(PLACEHOLDER_CELEBRITIES); setLoading(false); });
+      .then((d) => { setCelebrities(d.celebrities || []); setLoading(false); })
+      .catch(() => { setCelebrities([]); setLoading(false); });
   }, [search, category]);
 
   const filtered = celebrities.filter((c) => {
