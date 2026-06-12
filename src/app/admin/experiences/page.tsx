@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Save, Loader2, RotateCcw, Plus, Trash2 } from "lucide-react";
+import { Save, Loader2, RotateCcw, Plus, Trash2, Clock } from "lucide-react";
 import toast from "react-hot-toast";
 
 // Converts a label to a safe type key, e.g. "Private Yacht Party" → "PRIVATE_YACHT_PARTY"
@@ -254,6 +254,34 @@ export default function AdminExperiencesPage() {
                       placeholder="Short description shown to users..."
                     />
                   </div>
+                </div>
+
+                {/* ── Timed Event Toggle ───────────────────────────── */}
+                <div className={`mt-4 pt-4 border-t border-white/5 flex items-center justify-between gap-4 flex-wrap`}>
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-blue-400/10 border border-blue-400/20 flex items-center justify-center shrink-0 mt-0.5">
+                      <Clock size={14} className="text-blue-400" />
+                    </div>
+                    <div>
+                      <p className="text-white text-sm font-medium">Timed Event</p>
+                      <p className="text-[#6B7280] text-xs mt-0.5 leading-relaxed">
+                        Enable if this experience happens at a pre-set schedule (e.g. Live Concert, Live Appearance).
+                        When selected for an event, the date &amp; time fields will be <strong className="text-[#9CA3AF]">hidden</strong> — no scheduling needed.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => update(i, "isTimedEvent", !exp.isTimedEvent)}
+                    className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${
+                      exp.isTimedEvent ? "bg-blue-500" : "bg-[#1a1a2e] border border-white/10"
+                    }`}
+                    aria-label="Toggle timed event"
+                  >
+                    <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${
+                      exp.isTimedEvent ? "left-7" : "left-1"
+                    }`} />
+                  </button>
                 </div>
               </motion.div>
             ))}

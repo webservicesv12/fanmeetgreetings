@@ -27,19 +27,24 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const {
       title, description, celebrityId, eventType, date, duration,
-      location, isOnline, capacity, price, image, active,
+      location, isOnline, capacity, price, image, active, isTimedEvent,
     } = body;
 
     // Validate required fields with specific messages
     if (!title?.trim())       return NextResponse.json({ error: "Event title is required" }, { status: 400 });
     if (!celebrityId)         return NextResponse.json({ error: "Please select a celebrity" }, { status: 400 });
     if (!eventType)           return NextResponse.json({ error: "Please select an experience type" }, { status: 400 });
-    if (!date)                return NextResponse.json({ error: "Date & time is required" }, { status: 400 });
     if (!price && price !== 0) return NextResponse.json({ error: "Price is required" }, { status: 400 });
 
-    const parsedDate = new Date(date);
-    if (isNaN(parsedDate.getTime())) {
-      return NextResponse.json({ error: "Invalid date format" }, { status: 400 });
+    // Date is only required for non-timed events
+    let parsedDate: Date | null = null;
+    if (date) {
+      parsedDate = new Date(date);
+      if (isNaN(parsedDate.getTime())) {
+        return NextResponse.json({ error: "Invalid date format" }, { status: 400 });
+      }
+    } else if (!isTimedEvent) {
+      return NextResponse.json({ error: "Date & time is required for this experience type" }, { status: 400 });
     }
 
     const event = await prisma.event.create({
@@ -47,8 +52,9 @@ export async function POST(req: NextRequest) {
         title: title.trim(),
         description: description?.trim() || "",
         celebrityId,
-        eventType,           // now a String — accepts any value
+        eventType,
         date: parsedDate,
+        isTimedEvent: Boolean(isTimedEvent),
         duration: Number(duration) || 60,
         location: location?.trim() || null,
         isOnline: Boolean(isOnline),

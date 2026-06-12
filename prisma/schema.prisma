@@ -209,7 +209,8 @@ model Event {
   title       String
   description String    @db.Text
   eventType   String    @default("MEET_AND_GREET")
-  date        DateTime
+  date        DateTime?
+  isTimedEvent Boolean  @default(false)
   duration    Int       // in minutes
   location    String?
   isOnline    Boolean   @default(false)

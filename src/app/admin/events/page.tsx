@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Trash2, Edit2, X, Save, Loader2, Calendar, MapPin,
-  Users, DollarSign, Star, CheckCircle, ToggleLeft, ToggleRight,
+  Users, DollarSign, Star, CheckCircle, ToggleLeft, ToggleRight, Clock,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { format } from "date-fns";
@@ -60,7 +60,9 @@ export default function AdminEventsPage() {
     if (!data.title?.trim())    { toast.error("Event title is required"); return; }
     if (!data.celebrityId)      { toast.error("Please select a celebrity"); return; }
     if (!data.eventType)        { toast.error("Please select an experience type"); return; }
-    if (!data.date)             { toast.error("Date & time is required"); return; }
+    const selectedExp = experiences.find((e: any) => e.type === data.eventType);
+    const isTimed = selectedExp?.isTimedEvent ?? false;
+    if (!isTimed && !data.date) { toast.error("Date & time is required"); return; }
     if (!data.price && data.price !== 0) { toast.error("Price is required"); return; }
 
     setSaving(true);
@@ -153,7 +155,12 @@ export default function AdminEventsPage() {
               <div className="p-4 space-y-2">
                 <div className="flex items-center gap-2 text-[#9CA3AF] text-xs">
                   <Calendar size={12} />
-                  <span>{format(new Date(event.date), "MMM d, yyyy 'at' h:mm a")}</span>
+                  <span>
+                    {event.date
+                      ? format(new Date(event.date), "MMM d, yyyy 'at' h:mm a")
+                      : <span className="text-blue-400 flex items-center gap-1"><Clock size={11} /> Timed Event</span>
+                    }
+                  </span>
                 </div>
                 {event.location && (
                   <div className="flex items-center gap-2 text-[#9CA3AF] text-xs">
@@ -238,23 +245,46 @@ export default function AdminEventsPage() {
                   </Field>
 
                   <Field label="Experience Type *">
-                    <select value={modal.data.eventType} onChange={e => set("eventType", e.target.value)}
+                    <select value={modal.data.eventType} onChange={e => {
+                      const newType = e.target.value;
+                      const exp = experiences.find((x: any) => x.type === newType);
+                      // Clear date when switching to a timed event type
+                      set("eventType", newType);
+                      if (exp?.isTimedEvent) set("date", "");
+                    }}
                       className="input-luxury w-full px-3 py-2.5 text-sm rounded-xl" style={{ background: "#111118" }}>
                       {experiences.length === 0 && (
                         <option value="" disabled>Loading experiences...</option>
                       )}
                       {experiences.map(exp => (
                         <option key={exp.type} value={exp.type} style={{ background: "#111118" }}>
-                          {exp.icon ? `${exp.icon} ` : ""}{exp.label}
+                          {exp.icon ? `${exp.icon} ` : ""}{exp.label}{exp.isTimedEvent ? " 🕐" : ""}
                         </option>
                       ))}
                     </select>
                   </Field>
 
-                  <Field label="Date & Time *">
-                    <input type="datetime-local" value={modal.data.date} onChange={e => set("date", e.target.value)}
-                      className="input-luxury w-full px-3 py-2.5 text-sm rounded-xl" />
-                  </Field>
+                  {/* Timed event banner / date field */}
+                  {(() => {
+                    const selExp = experiences.find((e: any) => e.type === modal.data.eventType);
+                    if (selExp?.isTimedEvent) {
+                      return (
+                        <div className="md:col-span-2 flex items-start gap-3 px-4 py-3 rounded-xl bg-blue-400/5 border border-blue-400/20">
+                          <Clock size={16} className="text-blue-400 shrink-0 mt-0.5" />
+                          <p className="text-blue-300 text-xs leading-relaxed">
+                            <strong>Timed Event</strong> — this experience type runs on a pre-set schedule.
+                            Date &amp; time fields are <strong>not required</strong> for this event.
+                          </p>
+                        </div>
+                      );
+                    }
+                    return (
+                      <Field label="Date & Time *">
+                        <input type="datetime-local" value={modal.data.date} onChange={e => set("date", e.target.value)}
+                          className="input-luxury w-full px-3 py-2.5 text-sm rounded-xl" />
+                      </Field>
+                    );
+                  })()}
 
                   <Field label="Duration (minutes) *">
                     <input type="number" value={modal.data.duration} onChange={e => set("duration", e.target.value)}
