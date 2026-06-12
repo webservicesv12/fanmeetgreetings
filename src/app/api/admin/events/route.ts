@@ -54,7 +54,8 @@ export async function POST(req: NextRequest) {
         description: description?.trim() || "",
         celebrityId,
         eventType,
-        date: parsedDate,
+        // Spread date only when defined — timed events have no scheduled date
+        ...(parsedDate ? { date: parsedDate } : {}),
         isTimedEvent: Boolean(isTimedEvent),
         duration: Number(duration) || 60,
         location: location?.trim() || null,
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest) {
         price: Number(price),
         image: image?.trim() || null,
         active: active !== false,
-      },
+      } as any,
       include: { celebrity: { select: { id: true, name: true, slug: true } } },
     });
 
