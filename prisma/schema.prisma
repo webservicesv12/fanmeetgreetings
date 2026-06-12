@@ -208,7 +208,7 @@ model Event {
   celebrityId String
   title       String
   description String    @db.Text
-  eventType   EventType
+  eventType   String    @default("MEET_AND_GREET")
   date        DateTime
   duration    Int       // in minutes
   location    String?

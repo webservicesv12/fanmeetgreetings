@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { EventType } from "@prisma/client";
 
 const isAdmin = async () => {
   const session = await auth();
@@ -19,7 +18,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     data: {
       ...body,
       date: body.date ? new Date(body.date) : undefined,
-      eventType: body.eventType as EventType | undefined,
+      eventType: body.eventType,
       duration: body.duration ? Number(body.duration) : undefined,
       capacity: body.capacity ? Number(body.capacity) : undefined,
       price: body.price ? Number(body.price) : undefined,

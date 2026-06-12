@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { EventType } from "@prisma/client";
 
 const isAdmin = async () => {
   const session = await auth();
@@ -24,33 +23,46 @@ export async function POST(req: NextRequest) {
   const session = await isAdmin();
   if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const body = await req.json();
-  const {
-    title, description, celebrityId, eventType, date, duration,
-    location, isOnline, capacity, price, image, active,
-  } = body;
+  try {
+    const body = await req.json();
+    const {
+      title, description, celebrityId, eventType, date, duration,
+      location, isOnline, capacity, price, image, active,
+    } = body;
 
-  if (!title || !celebrityId || !eventType || !date || !price) {
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    // Validate required fields with specific messages
+    if (!title?.trim())       return NextResponse.json({ error: "Event title is required" }, { status: 400 });
+    if (!celebrityId)         return NextResponse.json({ error: "Please select a celebrity" }, { status: 400 });
+    if (!eventType)           return NextResponse.json({ error: "Please select an experience type" }, { status: 400 });
+    if (!date)                return NextResponse.json({ error: "Date & time is required" }, { status: 400 });
+    if (!price && price !== 0) return NextResponse.json({ error: "Price is required" }, { status: 400 });
+
+    const parsedDate = new Date(date);
+    if (isNaN(parsedDate.getTime())) {
+      return NextResponse.json({ error: "Invalid date format" }, { status: 400 });
+    }
+
+    const event = await prisma.event.create({
+      data: {
+        title: title.trim(),
+        description: description?.trim() || "",
+        celebrityId,
+        eventType,           // now a String — accepts any value
+        date: parsedDate,
+        duration: Number(duration) || 60,
+        location: location?.trim() || null,
+        isOnline: Boolean(isOnline),
+        capacity: Number(capacity) || 1,
+        price: Number(price),
+        image: image?.trim() || null,
+        active: active !== false,
+      },
+      include: { celebrity: { select: { id: true, name: true, slug: true } } },
+    });
+
+    return NextResponse.json({ event }, { status: 201 });
+  } catch (err: any) {
+    console.error("Event create error:", err);
+    return NextResponse.json({ error: err.message || "Failed to create event" }, { status: 500 });
   }
-
-  const event = await prisma.event.create({
-    data: {
-      title,
-      description: description || "",
-      celebrityId,
-      eventType: eventType as EventType,
-      date: new Date(date),
-      duration: Number(duration) || 60,
-      location: location || null,
-      isOnline: Boolean(isOnline),
-      capacity: Number(capacity) || 1,
-      price: Number(price),
-      image: image || null,
-      active: active !== false,
-    },
-    include: { celebrity: { select: { id: true, name: true, slug: true } } },
-  });
-
-  return NextResponse.json({ event }, { status: 201 });
 }

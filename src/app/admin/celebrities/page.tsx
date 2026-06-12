@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { Plus, Search, Star, Edit, Eye, ToggleLeft, ToggleRight, Trash2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Plus, Search, Star, Edit, Eye, ToggleLeft, ToggleRight, Trash2, AlertTriangle } from "lucide-react";
 import { formatPrice, CELEB_CATEGORY_LABELS } from "@/lib/utils";
 import toast from "react-hot-toast";
 
@@ -11,6 +11,8 @@ export default function AdminCelebritiesPage() {
   const [celebrities, setCelebrities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -33,14 +35,17 @@ export default function AdminCelebritiesPage() {
     } catch { toast.error("Update failed"); }
   };
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      const res = await fetch(`/api/celebrities/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/celebrities/${deleteTarget.id}`, { method: "DELETE" });
       if (!res.ok) throw new Error();
-      toast.success(`${name} deleted`);
-      setCelebrities(prev => prev.filter(c => c.id !== id));
+      toast.success(`${deleteTarget.name} deleted`);
+      setCelebrities(prev => prev.filter(c => c.id !== deleteTarget.id));
+      setDeleteTarget(null);
     } catch { toast.error("Delete failed"); }
+    finally { setDeleting(false); }
   };
 
   return (
@@ -127,7 +132,7 @@ export default function AdminCelebritiesPage() {
                     <Link href={`/admin/celebrities/${celeb.id}/edit`} className="w-7 h-7 glass rounded-lg flex items-center justify-center text-[#6B7280] hover:text-blue-400 transition-colors">
                       <Edit size={13} />
                     </Link>
-                    <button onClick={() => handleDelete(celeb.id, celeb.name)}
+                    <button onClick={() => setDeleteTarget({ id: celeb.id, name: celeb.name })}
                       className="w-7 h-7 glass rounded-lg flex items-center justify-center text-[#6B7280] hover:text-red-400 transition-colors">
                       <Trash2 size={13} />
                     </button>
@@ -191,7 +196,7 @@ export default function AdminCelebritiesPage() {
                       <div className="flex items-center gap-1">
                         <Link href={`/celebrities/${celeb.slug}`} className="w-7 h-7 glass rounded-lg flex items-center justify-center text-[#6B7280] hover:text-[#D4AF37] transition-colors"><Eye size={13} /></Link>
                         <Link href={`/admin/celebrities/${celeb.id}/edit`} className="w-7 h-7 glass rounded-lg flex items-center justify-center text-[#6B7280] hover:text-blue-400 transition-colors"><Edit size={13} /></Link>
-                        <button onClick={() => handleDelete(celeb.id, celeb.name)}
+                        <button onClick={() => setDeleteTarget({ id: celeb.id, name: celeb.name })}
                           className="w-7 h-7 glass rounded-lg flex items-center justify-center text-[#6B7280] hover:text-red-400 transition-colors">
                           <Trash2 size={13} />
                         </button>
@@ -204,6 +209,41 @@ export default function AdminCelebritiesPage() {
           </table>
         </div>
       </div>
+
+      {/* ── Delete Confirmation Modal ─────────────────── */}
+      <AnimatePresence>
+        {deleteTarget && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={e => e.target === e.currentTarget && setDeleteTarget(null)}>
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              className="card-luxury p-6 w-full max-w-sm text-center">
+              <div className="w-14 h-14 rounded-2xl bg-red-400/10 border border-red-400/20 flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle size={24} className="text-red-400" />
+              </div>
+              <h3 className="font-display text-lg font-bold text-white mb-2">Delete Celebrity?</h3>
+              <p className="text-[#9CA3AF] text-sm mb-1">
+                You are about to permanently delete
+              </p>
+              <p className="text-[#D4AF37] font-semibold mb-4">&ldquo;{deleteTarget.name}&rdquo;</p>
+              <p className="text-[#6B7280] text-xs mb-6">
+                This will also remove all associated packages, reviews, and bookings. This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <button onClick={() => setDeleteTarget(null)}
+                  className="btn-glass flex-1 py-2.5 rounded-xl text-sm font-medium">
+                  Cancel
+                </button>
+                <button onClick={handleDelete} disabled={deleting}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-red-500/20 border border-red-400/30 text-red-400 hover:bg-red-500/30 transition-colors flex items-center justify-center gap-2">
+                  {deleting ? <div className="w-4 h-4 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" /> : <Trash2 size={14} />}
+                  {deleting ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

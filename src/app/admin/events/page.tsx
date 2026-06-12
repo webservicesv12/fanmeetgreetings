@@ -54,15 +54,24 @@ export default function AdminEventsPage() {
 
   const save = async () => {
     if (!modal) return;
+    const { mode, data } = modal;
+
+    // Client-side validation
+    if (!data.title?.trim())    { toast.error("Event title is required"); return; }
+    if (!data.celebrityId)      { toast.error("Please select a celebrity"); return; }
+    if (!data.eventType)        { toast.error("Please select an experience type"); return; }
+    if (!data.date)             { toast.error("Date & time is required"); return; }
+    if (!data.price && data.price !== 0) { toast.error("Price is required"); return; }
+
     setSaving(true);
     try {
-      const { mode, data } = modal;
       const url = mode === "add" ? "/api/admin/events" : `/api/admin/events/${data.id}`;
       const method = mode === "add" ? "POST" : "PATCH";
       const res = await fetch(url, {
         method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(data),
       });
-      if (!res.ok) { const e = await res.json(); throw new Error(e.error); }
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Save failed");
       toast.success(mode === "add" ? "Event created!" : "Event updated!");
       setModal(null);
       fetchAll();
