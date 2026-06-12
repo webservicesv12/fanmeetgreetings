@@ -1,26 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Save, Loader2, RotateCcw, Plus, Trash2, GripVertical } from "lucide-react";
+import { Save, Loader2, RotateCcw, Plus, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 
 // Converts a label to a safe type key, e.g. "Private Yacht Party" → "PRIVATE_YACHT_PARTY"
 const toTypeKey = (label: string) =>
   label.toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "CUSTOM";
 
-const BLANK_EXPERIENCE = {
-  type: "", label: "", icon: "", defaultPrice: 1000, defaultDuration: 30,
-  description: "", isCustom: true,
-};
-
 export default function AdminExperiencesPage() {
   const [experiences, setExperiences] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  // Stable ID map: ensures React never remounts a card while the admin is typing
+  const stableIds = useRef<Map<number, string>>(new Map());
+
+  const getStableId = (index: number) => {
+    if (!stableIds.current.has(index)) {
+      stableIds.current.set(index, `exp-${Date.now()}-${index}`);
+    }
+    return stableIds.current.get(index)!;
+  };
 
   const fetchExperiences = () => {
     setLoading(true);
+    stableIds.current.clear();
     fetch("/api/admin/experiences")
       .then(r => r.json())
       .then(d => { setExperiences(d.experiences || []); setLoading(false); })
@@ -33,37 +38,46 @@ export default function AdminExperiencesPage() {
     setExperiences(prev => prev.map((exp, i) => {
       if (i !== index) return exp;
       const updated = { ...exp, [field]: value };
-      // Auto-sync type key from label for custom entries
-      if (field === "label" && exp.isCustom) {
+      // Auto-sync type key only when label changes AND the admin hasn't manually edited type
+      if (field === "label" && exp.isCustom && !exp._typeEdited) {
         updated.type = toTypeKey(value);
       }
       return updated;
     }));
   };
 
+  const updateType = (index: number, value: string) => {
+    setExperiences(prev => prev.map((exp, i) =>
+      i !== index ? exp : { ...exp, type: value.toUpperCase().replace(/[^A-Z0-9_]/g, "_"), _typeEdited: true }
+    ));
+  };
+
   const addNew = () => {
+    const newIndex = experiences.length;
+    stableIds.current.set(newIndex, `exp-new-${Date.now()}`);
     setExperiences(prev => [
       ...prev,
-      { ...BLANK_EXPERIENCE, type: `CUSTOM_${Date.now()}` },
+      { type: `CUSTOM_${Date.now()}`, label: "", icon: "", defaultPrice: 1000, defaultDuration: 30, description: "", isCustom: true },
     ]);
-    // Scroll to bottom after render
     setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" }), 100);
   };
 
   const remove = (index: number) => {
     if (!confirm("Remove this experience type?")) return;
+    stableIds.current.delete(index);
     setExperiences(prev => prev.filter((_, i) => i !== index));
   };
 
   const save = async () => {
-    // Validate required fields
     for (const exp of experiences) {
       if (!exp.label?.trim()) { toast.error("All experiences must have a display name"); return; }
       if (!exp.type?.trim()) { toast.error("All experiences must have a type code"); return; }
     }
-    // Check for duplicate type codes
     const types = experiences.map(e => e.type);
-    if (new Set(types).size !== types.length) { toast.error("Duplicate type codes found — make sure each experience has a unique name"); return; }
+    if (new Set(types).size !== types.length) {
+      toast.error("Duplicate type codes — each experience must have a unique name");
+      return;
+    }
 
     setSaving(true);
     try {
@@ -78,8 +92,16 @@ export default function AdminExperiencesPage() {
     finally { setSaving(false); }
   };
 
+  const SaveBtn = () => (
+    <button onClick={save} disabled={saving}
+      className="btn-gold px-5 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2">
+      {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+      {saving ? "Saving..." : "Save All"}
+    </button>
+  );
+
   return (
-    <div className="p-4 md:p-8">
+    <div className="p-4 md:p-8 pb-28">
       {/* Header */}
       <div className="flex items-start justify-between mb-8 gap-4">
         <div>
@@ -87,22 +109,18 @@ export default function AdminExperiencesPage() {
             Experience <span className="text-gradient-gold">Types</span>
           </h1>
           <p className="text-[#6B7280] mt-1 text-sm">
-            Customize display names, icons, and default pricing. Add new custom experience types.
+            Customize display names, icons, and default pricing. Add new custom types.
           </p>
         </div>
         <div className="flex gap-2 shrink-0">
-          <button onClick={fetchExperiences} className="btn-glass p-2.5 rounded-xl" title="Reload from server">
+          <button onClick={fetchExperiences} className="btn-glass p-2.5 rounded-xl" title="Reload">
             <RotateCcw size={16} />
           </button>
           <button onClick={addNew}
             className="btn-glass px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 border-[#D4AF37]/30 text-[#D4AF37]">
-            <Plus size={16} /> Add Experience
+            <Plus size={16} /> Add
           </button>
-          <button onClick={save} disabled={saving}
-            className="btn-gold px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2">
-            {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-            {saving ? "Saving..." : "Save All"}
-          </button>
+          <SaveBtn />
         </div>
       </div>
 
@@ -115,7 +133,9 @@ export default function AdminExperiencesPage() {
         <AnimatePresence initial={false}>
           <div className="space-y-4">
             {experiences.map((exp, i) => (
-              <motion.div key={`${exp.type}-${i}`}
+              <motion.div
+                // Use a stable key that NEVER changes while typing — only assigned once per slot
+                key={getStableId(i)}
                 initial={{ opacity: 0, y: -10, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -10, scale: 0.98 }}
@@ -129,7 +149,9 @@ export default function AdminExperiencesPage() {
                       {exp.icon || <span className="text-[#4B5563] text-sm">?</span>}
                     </div>
                     <div>
-                      <p className="text-white font-semibold text-sm">{exp.label || <span className="text-[#4B5563]">New Experience</span>}</p>
+                      <p className="text-white font-semibold text-sm">
+                        {exp.label || <span className="text-[#4B5563]">New Experience</span>}
+                      </p>
                       <p className="text-[#4B5563] text-xs font-mono">{exp.type}</p>
                     </div>
                     {exp.isCustom && (
@@ -138,36 +160,43 @@ export default function AdminExperiencesPage() {
                       </span>
                     )}
                   </div>
-                  {/* Only allow deleting custom ones */}
                   {exp.isCustom && (
                     <button onClick={() => remove(i)}
                       className="w-8 h-8 rounded-xl border border-red-400/20 bg-red-400/10 flex items-center justify-center text-red-400 hover:bg-red-400/20 transition-colors shrink-0"
-                      title="Remove this experience">
+                      title="Remove">
                       <Trash2 size={14} />
                     </button>
                   )}
                 </div>
 
-                {/* Fields grid */}
+                {/* Fields */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {/* Icon — optional */}
+                  {/* Icon */}
                   <div>
                     <label className="text-[#9CA3AF] text-xs uppercase tracking-wider font-medium mb-2 block">
                       Icon <span className="text-[#4B5563] normal-case">(emoji, optional)</span>
                     </label>
-                    <input value={exp.icon || ""} onChange={e => update(i, "icon", e.target.value)}
+                    <input
+                      value={exp.icon || ""}
+                      onChange={e => update(i, "icon", e.target.value)}
                       className="input-luxury w-full px-3 py-2 text-2xl rounded-xl text-center"
-                      maxLength={4} placeholder="✨" />
+                      maxLength={4}
+                      placeholder="✨"
+                    />
                   </div>
 
-                  {/* Display Name */}
+                  {/* Display Name — uses uncontrolled-style to avoid remount */}
                   <div>
                     <label className="text-[#9CA3AF] text-xs uppercase tracking-wider font-medium mb-2 block">
                       Display Name *
                     </label>
-                    <input value={exp.label} onChange={e => update(i, "label", e.target.value)}
+                    <input
+                      value={exp.label}
+                      onChange={e => update(i, "label", e.target.value)}
                       className="input-luxury w-full px-3 py-2 text-sm rounded-xl"
-                      placeholder="e.g. Private Yacht Party" />
+                      placeholder="e.g. Private Yacht Party"
+                      autoComplete="off"
+                    />
                   </div>
 
                   {/* Default Price */}
@@ -175,9 +204,13 @@ export default function AdminExperiencesPage() {
                     <label className="text-[#9CA3AF] text-xs uppercase tracking-wider font-medium mb-2 block">
                       Default Price ($)
                     </label>
-                    <input type="number" value={exp.defaultPrice}
+                    <input
+                      type="number"
+                      value={exp.defaultPrice}
                       onChange={e => update(i, "defaultPrice", Number(e.target.value))}
-                      className="input-luxury w-full px-3 py-2 text-sm rounded-xl" min={0} />
+                      className="input-luxury w-full px-3 py-2 text-sm rounded-xl"
+                      min={0}
+                    />
                   </div>
 
                   {/* Duration */}
@@ -185,29 +218,41 @@ export default function AdminExperiencesPage() {
                     <label className="text-[#9CA3AF] text-xs uppercase tracking-wider font-medium mb-2 block">
                       Duration (min)
                     </label>
-                    <input type="number" value={exp.defaultDuration}
+                    <input
+                      type="number"
+                      value={exp.defaultDuration}
                       onChange={e => update(i, "defaultDuration", Number(e.target.value))}
-                      className="input-luxury w-full px-3 py-2 text-sm rounded-xl" min={1} />
+                      className="input-luxury w-full px-3 py-2 text-sm rounded-xl"
+                      min={1}
+                    />
                   </div>
 
-                  {/* Type key — editable for custom, read-only for built-in */}
-                  <div className={exp.isCustom ? "" : "hidden"}>
-                    <label className="text-[#9CA3AF] text-xs uppercase tracking-wider font-medium mb-2 block">
-                      Type Code <span className="text-[#4B5563] normal-case">(auto-generated)</span>
-                    </label>
-                    <input value={exp.type} onChange={e => update(i, "type", e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, "_"))}
-                      className="input-luxury w-full px-3 py-2 text-xs rounded-xl font-mono text-[#D4AF37]"
-                      placeholder="CUSTOM_EXPERIENCE" />
-                  </div>
+                  {/* Type Code — custom only */}
+                  {exp.isCustom && (
+                    <div>
+                      <label className="text-[#9CA3AF] text-xs uppercase tracking-wider font-medium mb-2 block">
+                        Type Code <span className="text-[#4B5563] normal-case">(auto-generated)</span>
+                      </label>
+                      <input
+                        value={exp.type}
+                        onChange={e => updateType(i, e.target.value)}
+                        className="input-luxury w-full px-3 py-2 text-xs rounded-xl font-mono text-[#D4AF37]"
+                        placeholder="CUSTOM_EXPERIENCE"
+                      />
+                    </div>
+                  )}
 
                   {/* Description */}
-                  <div className={`${exp.isCustom ? "col-span-2 md:col-span-3" : "col-span-2 md:col-span-4"}`}>
+                  <div className={exp.isCustom ? "col-span-2 md:col-span-3" : "col-span-2 md:col-span-4"}>
                     <label className="text-[#9CA3AF] text-xs uppercase tracking-wider font-medium mb-2 block">
                       Description
                     </label>
-                    <input value={exp.description || ""} onChange={e => update(i, "description", e.target.value)}
+                    <input
+                      value={exp.description || ""}
+                      onChange={e => update(i, "description", e.target.value)}
                       className="input-luxury w-full px-3 py-2 text-sm rounded-xl"
-                      placeholder="Short description shown to users..." />
+                      placeholder="Short description shown to users..."
+                    />
                   </div>
                 </div>
               </motion.div>
@@ -216,7 +261,7 @@ export default function AdminExperiencesPage() {
         </AnimatePresence>
       )}
 
-      {/* Add button at bottom */}
+      {/* Bottom Add button */}
       {!loading && (
         <motion.button onClick={addNew} initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           className="w-full mt-4 py-4 rounded-2xl border border-dashed border-[#D4AF37]/30 text-[#D4AF37] text-sm font-medium flex items-center justify-center gap-2 hover:bg-[#D4AF37]/5 transition-colors">
@@ -224,15 +269,30 @@ export default function AdminExperiencesPage() {
         </motion.button>
       )}
 
-      {/* Info note */}
+      {/* Info */}
       <div className="mt-6 p-4 glass rounded-xl">
         <p className="text-[#6B7280] text-xs leading-relaxed">
-          💡 <strong className="text-[#9CA3AF]">Built-in types</strong> (Meet & Greet, Video Call, etc.) sync with the booking form automatically.{" "}
-          <strong className="text-[#9CA3AF]">Custom types</strong> you create here will also appear in the experience selector.
-          The icon emoji is optional — a "?" placeholder will show if left empty.
-          Click <strong className="text-[#9CA3AF]">Save All</strong> to apply any changes.
+          💡 <strong className="text-[#9CA3AF]">Built-in types</strong> (Meet & Greet, Video Call, etc.) sync with the booking form.{" "}
+          <strong className="text-[#9CA3AF]">Custom types</strong> you add here also appear in the experience selector.
+          Icon is optional — leave blank for a "?" placeholder. Click <strong className="text-[#9CA3AF]">Save All</strong> to apply.
         </p>
       </div>
+
+      {/* ── Sticky floating save bar at the bottom ────────────────────── */}
+      {!loading && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/5 bg-[#080808]/90 backdrop-blur-md px-4 py-3 flex items-center justify-between gap-3">
+          <p className="text-[#6B7280] text-xs hidden sm:block">
+            {experiences.length} experience type{experiences.length !== 1 ? "s" : ""} — remember to save!
+          </p>
+          <div className="flex gap-2 ml-auto">
+            <button onClick={addNew}
+              className="btn-glass px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-1.5 text-[#D4AF37] border-[#D4AF37]/20">
+              <Plus size={14} /> Add
+            </button>
+            <SaveBtn />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

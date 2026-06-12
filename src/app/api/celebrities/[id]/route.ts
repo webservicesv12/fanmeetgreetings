@@ -36,6 +36,6 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   if (!session?.user || (session.user as any).role !== "ADMIN") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
-  await prisma.celebrity.update({ where: { id }, data: { active: false } });
+  await prisma.celebrity.delete({ where: { id } });
   return NextResponse.json({ success: true });
 }

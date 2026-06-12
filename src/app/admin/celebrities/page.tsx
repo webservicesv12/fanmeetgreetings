@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Plus, Search, Star, Edit, Eye, ToggleLeft, ToggleRight } from "lucide-react";
+import { Plus, Search, Star, Edit, Eye, ToggleLeft, ToggleRight, Trash2 } from "lucide-react";
 import { formatPrice, CELEB_CATEGORY_LABELS } from "@/lib/utils";
 import toast from "react-hot-toast";
 
@@ -31,6 +31,16 @@ export default function AdminCelebritiesPage() {
       toast.success("Updated!");
       setCelebrities((prev) => prev.map((c) => c.id === id ? { ...c, [field]: !current } : c));
     } catch { toast.error("Update failed"); }
+  };
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+    try {
+      const res = await fetch(`/api/celebrities/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      toast.success(`${name} deleted`);
+      setCelebrities(prev => prev.filter(c => c.id !== id));
+    } catch { toast.error("Delete failed"); }
   };
 
   return (
@@ -111,13 +121,17 @@ export default function AdminCelebritiesPage() {
                   </button>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Link href={`/celebrities/${celeb.slug}`} className="w-7 h-7 glass rounded-lg flex items-center justify-center text-[#6B7280] hover:text-[#D4AF37] transition-colors">
-                    <Eye size={13} />
-                  </Link>
-                  <Link href={`/admin/celebrities/${celeb.id}/edit`} className="w-7 h-7 glass rounded-lg flex items-center justify-center text-[#6B7280] hover:text-blue-400 transition-colors">
-                    <Edit size={13} />
-                  </Link>
-                </div>
+                    <Link href={`/celebrities/${celeb.slug}`} className="w-7 h-7 glass rounded-lg flex items-center justify-center text-[#6B7280] hover:text-[#D4AF37] transition-colors">
+                      <Eye size={13} />
+                    </Link>
+                    <Link href={`/admin/celebrities/${celeb.id}/edit`} className="w-7 h-7 glass rounded-lg flex items-center justify-center text-[#6B7280] hover:text-blue-400 transition-colors">
+                      <Edit size={13} />
+                    </Link>
+                    <button onClick={() => handleDelete(celeb.id, celeb.name)}
+                      className="w-7 h-7 glass rounded-lg flex items-center justify-center text-[#6B7280] hover:text-red-400 transition-colors">
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
               </div>
             </motion.div>
           ))
@@ -177,6 +191,10 @@ export default function AdminCelebritiesPage() {
                       <div className="flex items-center gap-1">
                         <Link href={`/celebrities/${celeb.slug}`} className="w-7 h-7 glass rounded-lg flex items-center justify-center text-[#6B7280] hover:text-[#D4AF37] transition-colors"><Eye size={13} /></Link>
                         <Link href={`/admin/celebrities/${celeb.id}/edit`} className="w-7 h-7 glass rounded-lg flex items-center justify-center text-[#6B7280] hover:text-blue-400 transition-colors"><Edit size={13} /></Link>
+                        <button onClick={() => handleDelete(celeb.id, celeb.name)}
+                          className="w-7 h-7 glass rounded-lg flex items-center justify-center text-[#6B7280] hover:text-red-400 transition-colors">
+                          <Trash2 size={13} />
+                        </button>
                       </div>
                     </td>
                   </motion.tr>
