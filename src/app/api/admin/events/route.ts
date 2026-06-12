@@ -37,12 +37,13 @@ export async function POST(req: NextRequest) {
     if (!price && price !== 0) return NextResponse.json({ error: "Price is required" }, { status: 400 });
 
     // Date is only required for non-timed events
-    let parsedDate: Date | null = null;
+    let parsedDate: Date | undefined = undefined;
     if (date) {
-      parsedDate = new Date(date);
-      if (isNaN(parsedDate.getTime())) {
+      const d = new Date(date);
+      if (isNaN(d.getTime())) {
         return NextResponse.json({ error: "Invalid date format" }, { status: 400 });
       }
+      parsedDate = d;
     } else if (!isTimedEvent) {
       return NextResponse.json({ error: "Date & time is required for this experience type" }, { status: 400 });
     }
