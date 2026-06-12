@@ -9,20 +9,9 @@ import {
 import toast from "react-hot-toast";
 import { format } from "date-fns";
 
-const EVENT_TYPES = [
-  "MEET_AND_GREET","VIDEO_CALL","BIRTHDAY_SHOUTOUT",
-  "VIP_DINNER","LIVE_APPEARANCE","PRIVATE_CONCERT","PHOTO_SESSION",
-];
-
-const EVENT_TYPE_LABELS: Record<string, string> = {
-  MEET_AND_GREET: "Meet & Greet", VIDEO_CALL: "Video Call",
-  BIRTHDAY_SHOUTOUT: "Birthday Shoutout", VIP_DINNER: "VIP Dinner",
-  LIVE_APPEARANCE: "Live Appearance", PRIVATE_CONCERT: "Private Concert",
-  PHOTO_SESSION: "Photo Session",
-};
 
 const EMPTY_EVENT = {
-  title: "", description: "", celebrityId: "", eventType: "MEET_AND_GREET",
+  title: "", description: "", celebrityId: "", eventType: "",
   date: "", duration: 60, location: "", isOnline: false,
   capacity: 20, price: 5000, image: "", active: true,
 };
@@ -39,6 +28,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 export default function AdminEventsPage() {
   const [events, setEvents] = useState<any[]>([]);
   const [celebrities, setCelebrities] = useState<any[]>([]);
+  const [experiences, setExperiences] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [modal, setModal] = useState<{ mode: "add" | "edit"; data: any } | null>(null);
@@ -48,9 +38,11 @@ export default function AdminEventsPage() {
     Promise.all([
       fetch("/api/admin/events").then(r => r.json()),
       fetch("/api/celebrities").then(r => r.json()),
-    ]).then(([evData, celData]) => {
+      fetch("/api/admin/experiences").then(r => r.json()),
+    ]).then(([evData, celData, expData]) => {
       setEvents(evData.events || []);
       setCelebrities(celData.celebrities || []);
+      setExperiences(expData.experiences || []);
       setLoading(false);
     }).catch(() => setLoading(false));
   };
@@ -108,7 +100,7 @@ export default function AdminEventsPage() {
           </h1>
           <p className="text-[#6B7280] mt-1 text-sm">Create and manage public events</p>
         </div>
-        <button onClick={() => setModal({ mode: "add", data: { ...EMPTY_EVENT } })}
+        <button onClick={() => setModal({ mode: "add", data: { ...EMPTY_EVENT, eventType: experiences[0]?.type || "" } })}
           className="btn-gold px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2">
           <Plus size={16} /> New Event
         </button>
@@ -124,7 +116,7 @@ export default function AdminEventsPage() {
           <Calendar size={48} className="text-[#4B5563] mx-auto mb-4" />
           <p className="text-white font-semibold mb-2">No events yet</p>
           <p className="text-[#6B7280] text-sm mb-6">Create your first event to get started</p>
-          <button onClick={() => setModal({ mode: "add", data: { ...EMPTY_EVENT } })}
+          <button onClick={() => setModal({ mode: "add", data: { ...EMPTY_EVENT, eventType: experiences[0]?.type || "" } })}
             className="btn-gold px-6 py-3 rounded-xl font-semibold flex items-center gap-2 mx-auto">
             <Plus size={16} /> Create Event
           </button>
@@ -168,7 +160,7 @@ export default function AdminEventsPage() {
                   </div>
                 </div>
                 <span className="inline-block text-[10px] px-2 py-0.5 rounded-full bg-[#7C3AED]/10 border border-[#7C3AED]/20 text-purple-400">
-                  {EVENT_TYPE_LABELS[event.eventType] || event.eventType}
+                  {experiences.find(e => e.type === event.eventType)?.label || event.eventType}
                 </span>
               </div>
 
@@ -239,8 +231,13 @@ export default function AdminEventsPage() {
                   <Field label="Experience Type *">
                     <select value={modal.data.eventType} onChange={e => set("eventType", e.target.value)}
                       className="input-luxury w-full px-3 py-2.5 text-sm rounded-xl" style={{ background: "#111118" }}>
-                      {EVENT_TYPES.map(t => (
-                        <option key={t} value={t} style={{ background: "#111118" }}>{EVENT_TYPE_LABELS[t]}</option>
+                      {experiences.length === 0 && (
+                        <option value="" disabled>Loading experiences...</option>
+                      )}
+                      {experiences.map(exp => (
+                        <option key={exp.type} value={exp.type} style={{ background: "#111118" }}>
+                          {exp.icon ? `${exp.icon} ` : ""}{exp.label}
+                        </option>
                       ))}
                     </select>
                   </Field>
