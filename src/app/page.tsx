@@ -233,7 +233,7 @@ export default function HomePage() {
             transition={{ duration: 0.7, delay: 0.2 }}
             className="text-[#9CA3AF] text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed"
           >
-            Book exclusive meet-and-greet experiences, VIP dinners, video calls, 
+            Book exclusive meet-and-greet experiences, VIP dinners, video calls,
             and private sessions with the world&apos;s biggest stars.
           </motion.p>
 
@@ -418,7 +418,7 @@ export default function HomePage() {
                       </span>
                     </div>
                     <Link
-                      href={`/celebrities/${["aria-starlight","james-thunder","elena-voss","marcus-king"][i]}`}
+                      href={`/celebrities/${["aria-starlight", "james-thunder", "elena-voss", "marcus-king"][i]}`}
                       className="w-full btn-glass py-3 rounded-xl text-sm font-semibold text-center block group-hover:border-[#D4AF37]/40 group-hover:text-[#D4AF37] transition-all"
                     >
                       Book Now
@@ -515,7 +515,7 @@ export default function HomePage() {
                 <span className="text-gradient-gold">Celebrity Experiences</span>
               </h2>
               <p className="text-[#6B7280] mb-10 leading-relaxed">
-                We&apos;ve built the most trusted celebrity booking platform in the world, 
+                We&apos;ve built the most trusted celebrity booking platform in the world,
                 combining technology and personal service to create unforgettable experiences.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -671,12 +671,12 @@ export default function HomePage() {
                 <Link href="/celebrities" className="btn-gold px-10 py-4 rounded-2xl font-bold text-base">
                   Browse Celebrities ✦
                 </Link>
-                <Link
+                {/* <Link
                   href="/register"
                   className="btn-glass px-10 py-4 rounded-2xl font-semibold text-base"
                 >
                   Create Free Account
-                </Link>
+                </Link> */}
               </div>
             </div>
           </motion.div>
