@@ -8,7 +8,11 @@ import { PaymentMethod } from "@prisma/client";
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();
-    // Allow guest bookings by checking if session exists, but not returning 401
+    let validUserId = null;
+    if (session?.user?.id) {
+      const userExists = await prisma.user.findUnique({ where: { id: session.user.id } });
+      if (userExists) validUserId = session.user.id;
+    }
 
     const body = await req.json();
     const {
@@ -45,7 +49,7 @@ export async function POST(req: NextRequest) {
     const booking = await prisma.booking.create({
       data: {
         reference,
-        userId: session?.user?.id || null,
+        userId: validUserId,
         celebrityId: celebrity.id,
         eventType: eventType,
         eventDate: new Date(eventDate),
@@ -79,10 +83,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Create notification
-    if (session?.user?.id) {
+    if (validUserId) {
       await prisma.notification.create({
         data: {
-          userId: session.user.id,
+          userId: validUserId,
           type: "BOOKING_CREATED",
           title: "Booking Submitted",
           message: `Your booking ${reference} has been submitted and is pending review.`,
