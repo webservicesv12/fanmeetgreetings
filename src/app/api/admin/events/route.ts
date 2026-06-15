@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Invalid date format" }, { status: 400 });
       }
       parsedDate = d;
-    } else if (!isTimedEvent) {
+    } else if (isTimedEvent) {
       return NextResponse.json({ error: "Date & time is required for this experience type" }, { status: 400 });
     }
 
