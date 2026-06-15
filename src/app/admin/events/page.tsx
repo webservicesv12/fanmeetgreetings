@@ -62,7 +62,7 @@ export default function AdminEventsPage() {
     if (!data.eventType)        { toast.error("Please select an experience type"); return; }
     const selectedExp = experiences.find((e: any) => e.type === data.eventType);
     const isTimed = selectedExp?.isTimedEvent ?? false;
-    if (!isTimed && !data.date) { toast.error("Date & time is required"); return; }
+    if (isTimed && !data.date) { toast.error("Date & time is required"); return; }
     if (!data.price && data.price !== 0) { toast.error("Price is required"); return; }
 
     setSaving(true);
@@ -248,9 +248,9 @@ export default function AdminEventsPage() {
                     <select value={modal.data.eventType} onChange={e => {
                       const newType = e.target.value;
                       const exp = experiences.find((x: any) => x.type === newType);
-                      // Clear date when switching to a timed event type
+                      // Clear date when switching to a non-timed event type
                       set("eventType", newType);
-                      if (exp?.isTimedEvent) set("date", "");
+                      if (!exp?.isTimedEvent) set("date", "");
                     }}
                       className="input-luxury w-full px-3 py-2.5 text-sm rounded-xl" style={{ background: "#111118" }}>
                       {experiences.length === 0 && (
@@ -267,13 +267,13 @@ export default function AdminEventsPage() {
                   {/* Timed event banner / date field */}
                   {(() => {
                     const selExp = experiences.find((e: any) => e.type === modal.data.eventType);
-                    if (selExp?.isTimedEvent) {
+                    if (!selExp?.isTimedEvent) {
                       return (
                         <div className="md:col-span-2 flex items-start gap-3 px-4 py-3 rounded-xl bg-blue-400/5 border border-blue-400/20">
                           <Clock size={16} className="text-blue-400 shrink-0 mt-0.5" />
                           <p className="text-blue-300 text-xs leading-relaxed">
-                            <strong>Timed Event</strong> — this experience type runs on a pre-set schedule.
-                            Date &amp; time fields are <strong>not required</strong> for this event.
+                            <strong>Not a Timed Event</strong> — this experience type is not tied to a specific schedule.
+                            Date &amp; time fields are <strong>not required</strong>.
                           </p>
                         </div>
                       );
