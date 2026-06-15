@@ -125,8 +125,8 @@ export default function BookingPage({ params }: { params: Promise<{ celebrityId:
   const [guestCount, setGuestCount] = useState(1);
   const [specialRequirements, setSpecialRequirements] = useState("");
 
-  const [contactName, setContactName] = useState(session?.user?.name || "");
-  const [contactEmail, setContactEmail] = useState(session?.user?.email || "");
+  const [contactName, setContactName] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
 
   const [paymentMethod, setPaymentMethod] = useState("");
