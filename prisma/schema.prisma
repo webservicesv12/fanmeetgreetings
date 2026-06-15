@@ -227,7 +227,7 @@ model Event {
 model Booking {
   id                  String        @id @default(cuid())
   reference           String        @unique @default(cuid())
-  userId              String
+  userId              String?
   celebrityId         String
   packageId           String?
   eventId             String?
@@ -252,7 +252,7 @@ model Booking {
   contactEmail String?
   contactPhone String?
 
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
   celebrity Celebrity @relation(fields: [celebrityId], references: [id])
   package   Package?  @relation(fields: [packageId], references: [id])
   event     Event?    @relation(fields: [eventId], references: [id])
