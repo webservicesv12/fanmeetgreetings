@@ -570,7 +570,7 @@ export default function BookingPage({ params }: { params: Promise<{ celebrityId:
                     {/* Upload Proof */}
                     <div>
                       <label className="text-[#9CA3AF] text-xs uppercase tracking-wider font-medium mb-2 block">
-                        Upload Payment Proof *
+                        Upload Payment Proof (optional)
                       </label>
                       <label
                         className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center gap-3 cursor-pointer transition-all ${
@@ -646,7 +646,7 @@ export default function BookingPage({ params }: { params: Promise<{ celebrityId:
 
                     {/* Upload Receipt */}
                     <div>
-                      <label className="text-[#9CA3AF] text-xs uppercase tracking-wider font-medium mb-2 block">Upload Transfer Receipt *</label>
+                      <label className="text-[#9CA3AF] text-xs uppercase tracking-wider font-medium mb-2 block">Upload Transfer Receipt (optional)</label>
                       <label className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center gap-3 cursor-pointer transition-all ${paymentProof ? "border-[#D4AF37] bg-[#D4AF37]/5" : "border-white/10 hover:border-[#D4AF37]/40"}`}>
                         <input type="file" accept="image/*,.pdf" onChange={(e) => setPaymentProof(e.target.files?.[0] || null)} className="hidden" />
                         <Upload size={28} className={paymentProof ? "text-[#D4AF37]" : "text-[#4B5563]"} />

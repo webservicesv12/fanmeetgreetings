@@ -45,15 +45,7 @@ enum PaymentStatus {
   REJECTED
 }
 
-enum EventType {
-  MEET_AND_GREET
-  VIDEO_CALL
-  BIRTHDAY_SHOUTOUT
-  VIP_DINNER
-  LIVE_APPEARANCE
-  PRIVATE_CONCERT
-  PHOTO_SESSION
-}
+// EventType enum removed to support dynamic experience types
 
 enum CelebCategory {
   MUSIC
@@ -184,7 +176,7 @@ model Package {
   celebrityId String
   name        String
   description String    @db.Text
-  eventType   EventType
+  eventType   String
   duration    Int       // in minutes
   price       Float
   maxGuests   Int       @default(1)
@@ -240,7 +232,7 @@ model Booking {
   packageId           String?
   eventId             String?
   status              BookingStatus @default(PENDING)
-  eventType           EventType
+  eventType           String
   eventDate           DateTime
   duration            Int           // in minutes
   location            String?
