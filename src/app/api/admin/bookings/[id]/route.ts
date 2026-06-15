@@ -35,16 +35,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     });
   }
 
-  // Send notification
-  await prisma.notification.create({
-    data: {
-      userId: booking.userId,
-      type: `BOOKING_${action.toUpperCase()}D`,
-      title: `Booking ${action === "approve" ? "Approved" : action === "reject" ? "Rejected" : "Updated"}`,
-      message: `Your booking ${booking.reference} has been ${action}d.${reason ? ` Reason: ${reason}` : ""}`,
-      link: `/dashboard/bookings/${booking.id}`,
-    },
-  });
+  // Send notification if user exists
+  if (booking.userId) {
+    await prisma.notification.create({
+      data: {
+        userId: booking.userId,
+        type: `BOOKING_${action.toUpperCase()}D`,
+        title: `Booking ${action === "approve" ? "Approved" : action === "reject" ? "Rejected" : "Updated"}`,
+        message: `Your booking ${booking.reference} has been ${action}d.${reason ? ` Reason: ${reason}` : ""}`,
+        link: `/dashboard/bookings/${booking.id}`,
+      },
+    });
+  }
 
   // Log admin action
   await prisma.adminLog.create({
