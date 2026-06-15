@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { generateReference } from "@/lib/utils";
 import { sendBookingConfirmationEmail } from "@/lib/resend";
-import { EventType, PaymentMethod } from "@prisma/client";
+import { PaymentMethod } from "@prisma/client";
 
 export async function POST(req: NextRequest) {
   try {
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
         reference,
         userId: session.user.id,
         celebrityId: celebrity.id,
-        eventType: eventType as EventType,
+        eventType: eventType,
         eventDate: new Date(eventDate),
         duration: Number(duration),
         location: location || null,

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { EventType } from "@prisma/client";
+// Removed EventType import
 
 // Public GET — upcoming events
 export async function GET(req: NextRequest) {
@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
         { date: { gte: new Date() } },
         { date: null }
       ],
-      ...(eventType ? { eventType: eventType as EventType } : {}),
+      ...(eventType ? { eventType: eventType } : {}),
       ...(celebrityId ? { celebrityId } : {}),
     },
     include: {
