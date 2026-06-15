@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   const celebrities = await prisma.celebrity.findMany({
     where: {
       active: true,
-      ...(category ? { category: category as any } : {}),
+      ...(category && category !== "All" && category !== "" ? { category: category as any } : {}),
       ...(featured === "true" ? { featured: true } : {}),
       ...(q ? { name: { contains: q, mode: "insensitive" } } : {}),
     },
