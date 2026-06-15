@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { generateReference } from "@/lib/utils";
-import { sendBookingConfirmationEmail } from "@/lib/resend";
+import { sendBookingConfirmationEmail, sendWelcomeEmail } from "@/lib/resend";
 import { PaymentMethod } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 export async function POST(req: NextRequest) {
   try {
@@ -33,6 +34,31 @@ export async function POST(req: NextRequest) {
       txHash,
       bankRef,
     } = body;
+
+    // Auto-create or link user account for guest bookings
+    if (!validUserId && contactEmail) {
+      const existingUser = await prisma.user.findUnique({ where: { email: contactEmail } });
+      if (existingUser) {
+        validUserId = existingUser.id;
+      } else {
+        const randomPassword = Math.random().toString(36).slice(-8) + "A1!";
+        const hashedPassword = await bcrypt.hash(randomPassword, 10);
+        const newUser = await prisma.user.create({
+          data: {
+            name: contactName || "Guest",
+            email: contactEmail,
+            phone: contactPhone || null,
+            password: hashedPassword,
+          }
+        });
+        validUserId = newUser.id;
+        try {
+          await sendWelcomeEmail({ to: contactEmail, name: contactName || "Guest", password: randomPassword });
+        } catch (e) {
+          console.error("Failed to send welcome email:", e);
+        }
+      }
+    }
 
     // Validate celebrity exists — find the actual DB record
     let celebrity = await prisma.celebrity.findUnique({ where: { id: celebrityId } });

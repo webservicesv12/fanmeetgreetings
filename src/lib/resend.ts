@@ -172,10 +172,11 @@ export async function sendPaymentReceivedEmail(data: {
   });
 }
 
-export async function sendWelcomeEmail(data: { to: string; name: string }) {
+export async function sendWelcomeEmail(data: { to: string; name: string; password?: string }) {
   const content = `
     <h2 style="color:#F8F8F8;font-size:22px;margin:0 0 8px;">Welcome to ${APP_NAME}! ✨</h2>
     <p style="color:#9CA3AF;margin:0 0 24px;">Hi ${data.name}, your account has been created successfully.</p>
+    ${data.password ? `<div style="background:rgba(212,175,55,0.08);border:1px solid rgba(212,175,55,0.2);border-radius:12px;padding:24px;margin:0 0 24px;"><p style="color:#9CA3AF;margin:0 0 8px;">Your temporary password is: <strong style="color:#D4AF37;">${data.password}</strong></p><p style="color:#9CA3AF;margin:0;">Please log in and change your password as soon as possible.</p></div>` : ""}
     <p style="color:#9CA3AF;font-size:14px;line-height:1.6;">You now have access to exclusive celebrity meet-and-greet experiences, VIP events, and personalized fan experiences.</p>
     <div style="text-align:center;margin:32px 0 0;">
       <a href="${APP_URL}/celebrities" style="background:linear-gradient(135deg,#D4AF37,#F2D060);color:#000;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700;font-size:15px;">Explore Celebrities</a>
