@@ -3,6 +3,7 @@ import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import { SessionProvider } from "next-auth/react";
 import { auth } from "@/lib/auth";
+import Script from "next/script";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
@@ -76,6 +77,18 @@ export default async function RootLayout({
               },
             }}
           />
+          <Script id="smartsupp-chat" strategy="afterInteractive">
+            {`
+              var _smartsupp = _smartsupp || {};
+              _smartsupp.key = '3bd1d6098488c3c2df1dfe7375bd6e737ee212a5';
+              window.smartsupp||(function(d) {
+                var s,c,o=smartsupp=function(){ o._.push(arguments)};o._=[];
+                s=d.getElementsByTagName('script')[0];c=d.createElement('script');
+                c.type='text/javascript';c.charset='utf-8';c.async=true;
+                c.src='https://www.smartsuppchat.com/loader.js?';s.parentNode.insertBefore(c,s);
+              })(document);
+            `}
+          </Script>
         </SessionProvider>
       </body>
     </html>
