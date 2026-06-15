@@ -30,15 +30,7 @@ import { formatPrice, getDurationLabel, EVENT_TYPE_LABELS, PAYMENT_METHOD_LABELS
 
 // ─── Types & Constants ────────────────────────────────────────────────────────
 
-const EVENT_TYPES = [
-  { value: "MEET_AND_GREET", label: "Meet & Greet", price: 5000, duration: 30, icon: "🤝" },
-  { value: "VIDEO_CALL", label: "Video Call", price: 1500, duration: 15, icon: "📹" },
-  { value: "BIRTHDAY_SHOUTOUT", label: "Birthday Shoutout", price: 500, duration: 5, icon: "🎂" },
-  { value: "VIP_DINNER", label: "VIP Dinner", price: 15000, duration: 120, icon: "🍽️" },
-  { value: "LIVE_APPEARANCE", label: "Live Appearance", price: 25000, duration: 60, icon: "🎤" },
-  { value: "PRIVATE_CONCERT", label: "Private Concert", price: 50000, duration: 90, icon: "🎵" },
-  { value: "PHOTO_SESSION", label: "Photo Session", price: 3000, duration: 45, icon: "📸" },
-];
+// Removed hardcoded EVENT_TYPES
 
 const PAYMENT_METHODS = [
   { value: "BITCOIN", label: "Bitcoin", symbol: "BTC", icon: "₿", color: "#F7931A" },
@@ -117,6 +109,13 @@ export default function BookingPage({ params }: { params: Promise<{ celebrityId:
   const [bookingRef, setBookingRef] = useState<string>("");
 
   // Form State
+  const [experiences, setExperiences] = useState<any[]>([]);
+
+  React.useEffect(() => {
+    fetch("/api/experiences")
+      .then((res) => res.json())
+      .then((data) => setExperiences(data.experiences || []));
+  }, []);
   const [eventType, setEventType] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [eventTime, setEventTime] = useState("14:00");
@@ -136,8 +135,8 @@ export default function BookingPage({ params }: { params: Promise<{ celebrityId:
   const [bankRef, setBankRef] = useState("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
-  const selectedEventType = EVENT_TYPES.find((e) => e.value === eventType);
-  const totalAmount = selectedEventType ? selectedEventType.price * guestCount : 0;
+  const selectedEventType = experiences.find((e) => e.type === eventType);
+  const totalAmount = selectedEventType ? selectedEventType.defaultPrice * guestCount : 0;
 
   // ─── File Upload ───────────────────────────────────────────────────────────
 
@@ -210,7 +209,8 @@ export default function BookingPage({ params }: { params: Promise<{ celebrityId:
   };
 
   const canProceed = () => {
-    if (step === 1) return eventType && eventDate && eventTime;
+    const isTimed = selectedEventType?.isTimedEvent !== false;
+    if (step === 1) return eventType && (!isTimed || (eventDate && eventTime));
     if (step === 2) return contactName && contactEmail && contactPhone;
     if (step === 3) return paymentMethod;
     if (step === 4) return agreedToTerms;
@@ -256,55 +256,57 @@ export default function BookingPage({ params }: { params: Promise<{ celebrityId:
                     Select Experience Type *
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {EVENT_TYPES.map((et) => (
+                    {experiences.map((et) => (
                       <button
-                        key={et.value}
-                        onClick={() => { setEventType(et.value); setDuration(et.duration); }}
+                        key={et.type}
+                        onClick={() => { setEventType(et.type); setDuration(et.defaultDuration); }}
                         className={`p-4 rounded-xl border text-left transition-all ${
-                          eventType === et.value
+                          eventType === et.type
                             ? "border-[#D4AF37] bg-[#D4AF37]/5"
                             : "border-white/5 glass hover:border-white/15"
                         }`}
                       >
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-xl">{et.icon}</span>
-                          <span className="text-[#D4AF37] font-bold text-sm">{formatPrice(et.price)}</span>
+                          <span className="text-[#D4AF37] font-bold text-sm">{formatPrice(et.defaultPrice)}</span>
                         </div>
                         <p className="text-white text-sm font-medium">{et.label}</p>
-                        <p className="text-[#6B7280] text-xs">{et.duration} minutes</p>
+                        <p className="text-[#6B7280] text-xs">{et.defaultDuration} minutes</p>
                       </button>
                     ))}
                   </div>
                 </div>
 
                 {/* Date & Time */}
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label className="text-[#9CA3AF] text-xs uppercase tracking-wider font-medium mb-2 block">Event Date *</label>
-                    <div className="relative">
-                      <Calendar size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#4B5563]" />
-                      <input
-                        type="date"
-                        value={eventDate}
-                        onChange={(e) => setEventDate(e.target.value)}
-                        min={new Date().toISOString().split("T")[0]}
-                        className="input-luxury w-full pl-9 pr-3 py-3 text-sm rounded-xl"
-                      />
+                {(!selectedEventType || selectedEventType.isTimedEvent !== false) && (
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label className="text-[#9CA3AF] text-xs uppercase tracking-wider font-medium mb-2 block">Event Date *</label>
+                      <div className="relative">
+                        <Calendar size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#4B5563]" />
+                        <input
+                          type="date"
+                          value={eventDate}
+                          onChange={(e) => setEventDate(e.target.value)}
+                          min={new Date().toISOString().split("T")[0]}
+                          className="input-luxury w-full pl-9 pr-3 py-3 text-sm rounded-xl"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[#9CA3AF] text-xs uppercase tracking-wider font-medium mb-2 block">Event Time *</label>
+                      <div className="relative">
+                        <Clock size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#4B5563]" />
+                        <input
+                          type="time"
+                          value={eventTime}
+                          onChange={(e) => setEventTime(e.target.value)}
+                          className="input-luxury w-full pl-9 pr-3 py-3 text-sm rounded-xl"
+                        />
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    <label className="text-[#9CA3AF] text-xs uppercase tracking-wider font-medium mb-2 block">Event Time *</label>
-                    <div className="relative">
-                      <Clock size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#4B5563]" />
-                      <input
-                        type="time"
-                        value={eventTime}
-                        onChange={(e) => setEventTime(e.target.value)}
-                        className="input-luxury w-full pl-9 pr-3 py-3 text-sm rounded-xl"
-                      />
-                    </div>
-                  </div>
-                </div>
+                )}
 
                 {/* Duration */}
                 <div className="mb-4">
@@ -675,8 +677,10 @@ export default function BookingPage({ params }: { params: Promise<{ celebrityId:
                   <div className="glass rounded-xl p-5">
                     <h3 className="text-[#D4AF37] text-xs font-semibold uppercase tracking-wider mb-4">Event Details</h3>
                     <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div><p className="text-[#6B7280] text-xs mb-1">Experience</p><p className="text-white">{EVENT_TYPE_LABELS[eventType] || "—"}</p></div>
-                      <div><p className="text-[#6B7280] text-xs mb-1">Date & Time</p><p className="text-white">{eventDate} at {eventTime}</p></div>
+                      <div><p className="text-[#6B7280] text-xs mb-1">Experience</p><p className="text-white">{selectedEventType?.label || EVENT_TYPE_LABELS[eventType] || "—"}</p></div>
+                      {(!selectedEventType || selectedEventType.isTimedEvent !== false) && (
+                        <div><p className="text-[#6B7280] text-xs mb-1">Date & Time</p><p className="text-white">{eventDate} at {eventTime}</p></div>
+                      )}
                       <div><p className="text-[#6B7280] text-xs mb-1">Duration</p><p className="text-white">{getDurationLabel(duration)}</p></div>
                       <div><p className="text-[#6B7280] text-xs mb-1">Format</p><p className="text-white">{isOnline ? "Online" : "In-Person"}</p></div>
                       {location && <div className="col-span-2"><p className="text-[#6B7280] text-xs mb-1">Location</p><p className="text-white">{location}</p></div>}

@@ -7,21 +7,7 @@ import { Calendar, MapPin, Users, Clock, Star, ChevronRight, Search, Filter } fr
 import { format } from "date-fns";
 import { useSearchParams } from "next/navigation";
 
-const EVENT_TYPES = [
-  { value: "", label: "All Types" },
-  { value: "MEET_AND_GREET", label: "Meet & Greet" },
-  { value: "VIDEO_CALL", label: "Video Call" },
-  { value: "BIRTHDAY_SHOUTOUT", label: "Birthday Shoutout" },
-  { value: "VIP_DINNER", label: "VIP Dinner" },
-  { value: "LIVE_APPEARANCE", label: "Live Appearance" },
-  { value: "PRIVATE_CONCERT", label: "Private Concert" },
-  { value: "PHOTO_SESSION", label: "Photo Session" },
-];
-
-const TYPE_ICONS: Record<string, string> = {
-  MEET_AND_GREET: "🤝", VIDEO_CALL: "📹", BIRTHDAY_SHOUTOUT: "🎂",
-  VIP_DINNER: "🍽️", LIVE_APPEARANCE: "🎤", PRIVATE_CONCERT: "🎵", PHOTO_SESSION: "📸",
-};
+// Removed hardcoded EVENT_TYPES and TYPE_ICONS
 
 const CATEGORY_COLORS: Record<string, string> = {
   MUSIC: "text-purple-400", ACTOR: "text-blue-400", ATHLETE: "text-green-400",
@@ -29,7 +15,10 @@ const CATEGORY_COLORS: Record<string, string> = {
   PRESENTER: "text-yellow-400", ENTREPRENEUR: "text-red-400",
 };
 
-function EventCard({ event }: { event: any }) {
+function EventCard({ event, experiences = [] }: { event: any, experiences?: any[] }) {
+  const experience = experiences.find(e => e.type === event.eventType);
+  const icon = experience?.icon || "⭐";
+  const label = experience?.label || event.eventType;
   const spotsLeft = event.capacity - (event.booked || 0);
   const soldOut = spotsLeft <= 0;
 
@@ -43,14 +32,14 @@ function EventCard({ event }: { event: any }) {
             <img src={event.image} alt={event.title} className="w-full h-full object-cover" />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-6xl">{TYPE_ICONS[event.eventType] || "⭐"}</span>
+              <span className="text-6xl">{icon}</span>
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-[#080808] via-[#080808]/30 to-transparent" />
           {/* Badges */}
           <div className="absolute top-3 left-3 flex gap-2">
             <span className="text-[10px] px-2 py-1 rounded-full bg-[#7C3AED]/80 border border-purple-400/30 text-purple-200 font-medium">
-              {TYPE_ICONS[event.eventType]} {EVENT_TYPES.find(t => t.value === event.eventType)?.label || event.eventType}
+              {icon} {label}
             </span>
           </div>
           {soldOut && (
@@ -79,10 +68,12 @@ function EventCard({ event }: { event: any }) {
 
           {/* Details */}
           <div className="space-y-1.5 mb-4 flex-1">
-            <div className="flex items-center gap-2 text-[#9CA3AF] text-xs">
-              <Calendar size={11} className="shrink-0" />
-              <span>{format(new Date(event.date), "EEE, MMM d yyyy 'at' h:mm a")}</span>
-            </div>
+            {event.date && (
+              <div className="flex items-center gap-2 text-[#9CA3AF] text-xs">
+                <Calendar size={11} className="shrink-0" />
+                <span>{format(new Date(event.date), "EEE, MMM d yyyy 'at' h:mm a")}</span>
+              </div>
+            )}
             {event.location && (
               <div className="flex items-center gap-2 text-[#9CA3AF] text-xs">
                 <MapPin size={11} className="shrink-0" /><span className="truncate">{event.location}</span>
@@ -122,8 +113,13 @@ function EventCard({ event }: { event: any }) {
 function EventsContent() {
   const searchParams = useSearchParams();
   const [events, setEvents] = useState<any[]>([]);
+  const [experiences, setExperiences] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState(searchParams.get("type") || "");
+
+  useEffect(() => {
+    fetch("/api/experiences").then(r => r.json()).then(d => setExperiences(d.experiences || []));
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -155,14 +151,14 @@ function EventsContent() {
         <div className="glass rounded-2xl p-4">
           <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
             <Filter size={15} className="text-[#4B5563] shrink-0" />
-            {EVENT_TYPES.map(t => (
-              <button key={t.value} onClick={() => setTypeFilter(t.value)}
+            {[{ type: "", label: "All Types", icon: "" }, ...experiences].map(t => (
+              <button key={t.type} onClick={() => setTypeFilter(t.type)}
                 className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
-                  typeFilter === t.value
+                  typeFilter === t.type
                     ? "bg-[#D4AF37] text-black"
                     : "btn-glass"
                 }`}>
-                {t.value && TYPE_ICONS[t.value] + " "}{t.label}
+                {t.type && t.icon + " "}{t.label}
               </button>
             ))}
           </div>
@@ -201,7 +197,7 @@ function EventsContent() {
               <span className="text-white font-medium">{events.length}</span> upcoming events
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {events.map(event => <EventCard key={event.id} event={event} />)}
+              {events.map(event => <EventCard key={event.id} event={event} experiences={experiences} />)}
             </div>
           </>
         )}

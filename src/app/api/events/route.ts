@@ -12,7 +12,10 @@ export async function GET(req: NextRequest) {
   const events = await prisma.event.findMany({
     where: {
       active: true,
-      date: { gte: new Date() },
+      OR: [
+        { date: { gte: new Date() } },
+        { date: null }
+      ],
       ...(eventType ? { eventType: eventType as EventType } : {}),
       ...(celebrityId ? { celebrityId } : {}),
     },
