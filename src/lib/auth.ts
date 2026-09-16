@@ -7,6 +7,7 @@
 import NextAuth from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { CredentialsSignin } from "next-auth";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
 import { authConfig } from "@/lib/auth.config";
@@ -25,23 +26,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error("Email and password are required");
+          throw new CredentialsSignin("Email and password are required");
         }
 
         const user = await prisma.user.findUnique({
           where: { email: credentials.email as string },
         });
 
-        if (!user) throw new Error("Invalid email or password");
-        if (!user.password) throw new Error("Please use Google to sign in to this account");
-        if (user.suspended) throw new Error("Your account has been suspended. Please contact support.");
+        if (!user) throw new CredentialsSignin("Invalid email or password");
+        if (!user.password) throw new CredentialsSignin("Please use Google to sign in to this account");
+        if (user.suspended) throw new CredentialsSignin("Your account has been suspended. Please contact support.");
 
         const isValid = await bcrypt.compare(
           credentials.password as string,
           user.password
         );
 
-        if (!isValid) throw new Error("Invalid email or password");
+        if (!isValid) throw new CredentialsSignin("Invalid email or password");
 
         return {
           id: user.id,
