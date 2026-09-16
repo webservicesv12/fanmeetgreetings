@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
-import { SessionProvider } from "next-auth/react";
+import { Providers } from "@/components/Providers";
 import { auth } from "@/lib/auth";
 import Script from "next/script";
 
@@ -60,7 +60,7 @@ export default async function RootLayout({
         {/* Grain texture overlay */}
         <div className="grain-overlay" aria-hidden="true" />
 
-        <SessionProvider session={session}>
+        <Providers>
           {children}
           <Toaster
             position="top-right"
@@ -89,7 +89,7 @@ export default async function RootLayout({
               })(document);
             `}
           </Script>
-        </SessionProvider>
+        </Providers>
       </body>
     </html>
   );
